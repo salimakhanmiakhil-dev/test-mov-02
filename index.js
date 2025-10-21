@@ -1,40 +1,44 @@
-const express = require("express");
-const axios = require("axios");
-const cheerio = require("cheerio");
-const path = require("path");
+import express from "express";
+import axios from "axios";
+import * as cheerio from "cheerio";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Serve HTML file
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "mov.html"));
 });
 
-// --- استخراج دیتا از mymoviz.co ---
+// API for searching movies
 app.get("/api/search", async (req, res) => {
-  const q = req.query.q;
-  if (!q) return res.status(400).json({ error: "missing query" });
+  const query = req.query.q;
+  if (!query) return res.json({ error: "Missing query" });
 
   try {
-    const response = await axios.get(`https://mymoviz.co/search/?q=${encodeURIComponent(q)}&search=`, {
-      headers: { "User-Agent": "Mozilla/5.0" }
-    });
+    const url = `https://mymoviz.co/search/?q=${encodeURIComponent(query)}`;
+    const { data } = await axios.get(url);
+    const $ = cheerio.load(data);
 
-    const $ = cheerio.load(response.data);
     const results = [];
-
-    // 🔍 استخراج هر فیلم از HTML صفحه
-    $(".ml-item").each((_, el) => {
-      const title = $(el).find(".mli-info h2").text().trim();
+    // Selector دقیق برای فیلم‌ها
+    $(".movies .movie").each((_, el) => {
+      const title = $(el).find(".title").text().trim();
       const link = $(el).find("a").attr("href");
-      const img = $(el).find("img").attr("data-original") || $(el).find("img").attr("src");
+      const img = $(el).find("img").attr("data-src") || $(el).find("img").attr("src");
       if (title) results.push({ title, link, img });
     });
 
     res.json(results);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch from mymoviz", details: err.message });
+    console.error(err);
+    res.json({ error: "Failed to fetch data" });
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log("Server running on port " + port));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

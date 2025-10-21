@@ -1,39 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa">
 <head>
-  <meta charset="UTF-8">
-  <title>MyMoviz Scraper</title>
+<meta charset="UTF-8">
+<title>جستجوی فیلم</title>
+<style>
+    body {
+        font-family: "Tahoma", sans-serif;
+        background: #1e1e2f;
+        color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+    }
+
+    header {
+        background: #2c2c44;
+        padding: 20px;
+        text-align: center;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #f9c74f;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .search-box {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    .search-box input {
+        width: 300px;
+        padding: 10px;
+        border-radius: 5px 0 0 5px;
+        border: none;
+        outline: none;
+        font-size: 1em;
+    }
+
+    .search-box button {
+        padding: 10px 15px;
+        border: none;
+        background: #f9c74f;
+        color: #1e1e2f;
+        font-weight: bold;
+        border-radius: 0 5px 5px 0;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .search-box button:hover {
+        background: #f9844a;
+    }
+
+    #results {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+        padding: 20px;
+        list-style: none;
+    }
+
+    #results li {
+        background: #2c2c44;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #results li:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    #results img {
+        max-width: 100%;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+
+    a {
+        text-decoration: none;
+        color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    a:hover {
+        color: #f9c74f;
+    }
+
+    @media(max-width: 500px){
+        .search-box input {
+            width: 60%;
+        }
+    }
+</style>
 </head>
 <body>
-  <h1>Movie Search</h1>
-  <input id="query" placeholder="Enter movie name">
-  <button onclick="search()">Search</button>
 
-  <div id="results" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:20px;"></div>
+<header>جستجوی فیلم</header>
 
-  <script>
-    async function search() {
-      const q = document.getElementById("query").value;
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
+<div class="search-box">
+    <input type="text" id="query" placeholder="نام فیلم را وارد کنید...">
+    <button onclick="search()">جستجو</button>
+</div>
 
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
+<ul id="results"></ul>
 
-      if (!data.length) {
-        resultsDiv.innerHTML = "<p>No results found.</p>";
+<script>
+async function search() {
+    const q = document.getElementById("query").value;
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const ul = document.getElementById("results");
+    ul.innerHTML = "";
+    if(data.error){
+        ul.innerHTML = "<li>" + data.error + "</li>";
         return;
-      }
-
-      data.forEach(movie => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <img src="${movie.img}" alt="${movie.title}" width="150">
-          <p><a href="${movie.link}" target="_blank">${movie.title}</a></p>
-        `;
-        resultsDiv.appendChild(div);
-      });
     }
-  </script>
+    if(data.length === 0){
+        ul.innerHTML = "<li>هیچ نتیجه‌ای یافت نشد.</li>";
+        return;
+    }
+    data.forEach(movie => {
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="${movie.link}" target="_blank">
+                            <img src="${movie.img}" alt="${movie.title}"><br>
+                            ${movie.title}
+                        </a>`;
+        ul.appendChild(li);
+    });
+}
+</script>
+
 </body>
 </html>
